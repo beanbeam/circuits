@@ -6,7 +6,7 @@
 ;; =========
 
 (define BACKGROUND (empty-scene 500 500))
-(define WIRE-PEN (pen 'black 3 'solid 'projecting 'bevel))
+(define WIRE-PEN (pen 'black 2 'solid 'projecting 'bevel))
 
 (define RESISTOR-SECTION-LENGTH 5)
 (define RESISTOR-WIDTH 12)
@@ -74,23 +74,45 @@
              [dx (/ (- (node-x e) (node-x s)) d)]
              [dy (/ (- (node-y e) (node-y s)) d)]
              [n (truncate (/ (- d (* 2 MINIMUM-RESISTOR-LEAD-LENGTH)) RESISTOR-SECTION-LENGTH))]
-             [lead-length (/ (- d (* n RESISTOR-SECTION-LENGTH)) 2)])
+             [lead-length (/ (- d (* n RESISTOR-SECTION-LENGTH)) 2)]
+             [evn (λ (num) (if (even? n) num (- num)))])
+        (display n)
         (scene+line
          (scene+line
-          (build (- n 1) (λ (num img)
-                           (let ([sx (+ (node-x s) (* (+ num .5) RESISTOR-SECTION-LENGTH dx) (* lead-length dx))]
-                                 [sy (+ (node-y s) (* (+ num .5) RESISTOR-SECTION-LENGTH dy) (* lead-length dy))]
-                                 [evn (λ (n) (if (even? num) n (- n)))])
-                             (scene+line
-                              img
-                              (+ sx (- (evn (* 1/2 RESISTOR-WIDTH dy))))
-                              (+ sy (evn (* 1/2 RESISTOR-WIDTH dx)))
-                              (+ (* RESISTOR-SECTION-LENGTH dx) sx
-                                 (evn (* 1/2 RESISTOR-WIDTH dy)))
-                              (+ (* RESISTOR-SECTION-LENGTH dy) sy
-                                 (- (evn (* 1/2 RESISTOR-WIDTH dx))))
-                              WIRE-PEN)))
-                 i)
+          (scene+line
+           (scene+line
+            (build (- n 1) (λ (num img)
+                             (let ([sx (+ (node-x s) (* (+ num .5) RESISTOR-SECTION-LENGTH dx) (* lead-length dx))]
+                                   [sy (+ (node-y s) (* (+ num .5) RESISTOR-SECTION-LENGTH dy) (* lead-length dy))]
+                                   [evn (λ (n) (if (even? num) n (- n)))])
+                               (scene+line
+                                img
+                                (+ sx (- (evn (* 1/2 RESISTOR-WIDTH dy))))
+                                (+ sy (evn (* 1/2 RESISTOR-WIDTH dx)))
+                                (+ (* RESISTOR-SECTION-LENGTH dx) sx
+                                   (evn (* 1/2 RESISTOR-WIDTH dy)))
+                                (+ (* RESISTOR-SECTION-LENGTH dy) sy
+                                   (- (evn (* 1/2 RESISTOR-WIDTH dx))))
+                                WIRE-PEN)))
+                   i)
+            (+ (node-x e) (- (* lead-length dx))
+               (evn (* 1/2 RESISTOR-WIDTH dy))
+               (- (* 1/2 RESISTOR-SECTION-LENGTH dx)))
+            (+ (node-y e) (- (* lead-length dy))
+               (- (evn (* 1/2 RESISTOR-WIDTH dx)))
+               (- (* 1/2 RESISTOR-SECTION-LENGTH dy)))
+            (- (node-x e) (* lead-length dx))
+            (- (node-y e) (* lead-length dy))
+            WIRE-PEN)
+           (+ (node-x s) (* lead-length dx)
+              (- (* 1/2 RESISTOR-WIDTH dy))
+              (* 1/2 RESISTOR-SECTION-LENGTH dx))
+           (+ (node-y s) (* lead-length dy)
+              (* 1/2 RESISTOR-WIDTH dx)
+              (* 1/2 RESISTOR-SECTION-LENGTH dy))
+           (+ (node-x s) (* lead-length dx))
+           (+ (node-y s) (* lead-length dy))
+           WIRE-PEN)
           (- (node-x e) (* lead-length dx))
           (- (node-y e) (* lead-length dy))
           (node-x e) (node-y e)
@@ -119,8 +141,8 @@
          (circuit-elements c)))
 
 (define test-circuit
-  (circuit (vector (node 100 300) (node 230 200)
-                   (node 270 200) (node 400 300))
+  (circuit (vector (node 200 300) (node 200 200)
+                   (node 300 100) (node 300 300))
            (list (new wire% [start 0] [end 1])
                  (new resistor% [start 1] [end 2] [resistance 5])
                  (new wire% [start 2] [end 3]))))
