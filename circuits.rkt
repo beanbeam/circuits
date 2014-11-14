@@ -9,8 +9,12 @@
 (define WIRE-PEN (pen 'black 2 'solid 'projecting 'bevel))
 
 (define RESISTOR-SECTION-LENGTH 5)
-(define RESISTOR-WIDTH 12)
+(define RESISTOR-WIDTH 10)
 (define MINIMUM-RESISTOR-LEAD-LENGTH 8)
+
+(define DC-SOURCE-SEPERATION 6)
+(define DC-SOURCE-HIGH-WIDTH 18)
+(define DC-SOURCE-LOW-WIDTH 10)
 
 ;; DATA DEFINITIONS
 ;; ================
@@ -76,7 +80,6 @@
              [n (truncate (/ (- d (* 2 MINIMUM-RESISTOR-LEAD-LENGTH)) RESISTOR-SECTION-LENGTH))]
              [lead-length (/ (- d (* n RESISTOR-SECTION-LENGTH)) 2)]
              [evn (λ (num) (if (even? n) num (- num)))])
-        (display n)
         (scene+line
          (scene+line
           (scene+line
@@ -130,8 +133,45 @@
     
     (define/public (get-low) (send this get-start))
     (define/public (get-high) (send this get-end))
-    (define/public (get-difference) diff)))
-
+    (define/public (get-difference) diff)
+    (define/override (draw-at low high i)
+      (let* ([d (sqrt (+ (sqr (- (node-x high) (node-x low)))
+                         (sqr (- (node-y high) (node-y low)))))]
+             [dx (/ (- (node-x high) (node-x low)) d)]
+             [dy (/ (- (node-y high) (node-y low)) d)]
+             [lead-length (/ (- d DC-SOURCE-SEPERATION) 2)])
+        (scene+line
+         (scene+line
+          (scene+line
+           (scene+line
+            i
+            (node-x low) (node-y low)
+            (+ (node-x low) (* lead-length dx))
+            (+ (node-y low) (* lead-length dy))
+            WIRE-PEN)
+           (node-x high) (node-y high)
+           (- (node-x high) (* lead-length dx))
+           (- (node-y high) (* lead-length dy))
+           WIRE-PEN)
+          (+ (node-x low) (* lead-length dx)
+             (* 1/2 DC-SOURCE-LOW-WIDTH dy))
+          (+ (node-y low) (* lead-length dy)
+             (* -1/2 DC-SOURCE-LOW-WIDTH dx))
+          (+ (node-x low) (* lead-length dx)
+             (* -1/2 DC-SOURCE-LOW-WIDTH dy))
+          (+ (node-y low) (* lead-length dy)
+             (* 1/2 DC-SOURCE-LOW-WIDTH dx))
+          WIRE-PEN)
+         (+ (node-x high) (- (* lead-length dx))
+             (* 1/2 DC-SOURCE-HIGH-WIDTH dy))
+         (+ (node-y high) (- (* lead-length dy))
+             (* -1/2 DC-SOURCE-HIGH-WIDTH dx))
+         (+ (node-x high) (- (* lead-length dx))
+             (* -1/2 DC-SOURCE-HIGH-WIDTH dy))
+         (+ (node-y high) (- (* lead-length dy))
+             (* 1/2 DC-SOURCE-HIGH-WIDTH dx))
+         WIRE-PEN)))))
+        
 
 ;; draw-circuit : Circuit -> Image
 ;; Returns an image representation of c
@@ -142,9 +182,10 @@
 
 (define test-circuit
   (circuit (vector (node 200 300) (node 200 200)
-                   (node 300 100) (node 300 300))
+                   (node 350 250) (node 300 300))
            (list (new wire% [start 0] [end 1])
                  (new resistor% [start 1] [end 2] [resistance 5])
-                 (new wire% [start 2] [end 3]))))
+                 (new dc-source% [low 2] [high 3] [difference 9])
+                 (new resistor% [start 3] [end 0] [resistance 4]))))
 
 (draw-circuit test-circuit)
